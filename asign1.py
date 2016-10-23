@@ -13,11 +13,6 @@ from sklearn.preprocessing import Imputer
 def mse(y, yhat, df):
     return sum( (y - yhat)**2 ) / (len(y) - df)
 
-def imputecol(data, value_flag):
-    # requires pandas data frame
-    for i in range(3, data.columns):
-        data.loc[:,i] = data[i].replace(np.mean(data[i].where(data[i] != value_flag)))
-    return data
 # ################# Boston Data #############################
 boston = pd.read_csv('boston.csv')
 
@@ -49,22 +44,32 @@ for idx in range(4,27):
     temp[idx] = temp[idx].str.rstrip('PCS')
 
 # impute missing data
-imputer_col = Imputer(-9999, 'mean', 0)
+col_imputer = Imputer(-9999, 'mean', 0)
 for col in range(3,27):
     temp[col] = pd.to_numeric(temp[col])
 
-temp.loc[:,3:27] = imputer_col.fit_transform(temp.loc[:,3:27])
+temp.loc[:,3:27] = col_imputer.fit_transform(temp.loc[:,3:27])
 
 # separate test data and training data
 training = temp[~temp[0].isin(['USW00023234', 'USW00014918', 'USW00012919', 'USW00013743', 'USW00025309'])]
 test = temp[temp[0].isin(['USW00023234', 'USW00014918', 'USW00012919', 'USW00013743', 'USW00025309'])]
 
+LS_mse = []
+KNN_mse = []
 for i in range(3,27):
     X = pd.DataFrame()
     nIDs = len(training[0].unique())
     if i > 3:
         X['prevhour'] = training[i-1]
-        X['prevday'] = 5# previous day hour
         X['avg_daily'] = np.mean(training.loc[:, 3:(i - 1)], axis=1)
-
+    X['prevday'] = training.groupby([0, 1, 2])[3].mean().shift(1)
     X['avg_daily_global'] = np.repeat(training.groupby([1, 2])[i].mean(), nIDs)
+
+    # perform least squares on test set
+
+    # get test MSE for least squares
+
+    # perform KNN on test set
+
+    # get test MSE for KNN
+
